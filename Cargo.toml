@@ -1,0 +1,18 @@
+[package]
+name = "pinetime-bsp"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+cst816s = "1.0.1"
+defmt = "1.0.1"
+embassy-nrf = { version = "0.9.0", features = [
+    "gpiote",
+    "nfc-pins-as-gpio",
+    "nrf52832",
+    "time-driver-rtc1",
+    "time",
+] }
+embassy-sync = "0.7.2"
+embassy-time = "0.5.0"
+
