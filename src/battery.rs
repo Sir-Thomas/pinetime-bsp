@@ -12,7 +12,7 @@ pub struct BatteryController {
 
 impl BatteryController{
     /// Create a new battery controller
-    pub fn new(
+    pub(crate) fn new(
         level_pin: Peri<'static, peripherals::P0_31>,
         saadc: Peri<'static, peripherals::SAADC>,
         irqs: Irqs,
