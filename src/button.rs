@@ -27,10 +27,12 @@ impl Button {
 
     /// Returns true if the button is pressed
     fn is_pressed(&mut self) -> bool {
-        self.enable.set_high();
-        self.enable.set_high();
-        self.enable.set_high();
-        self.enable.set_high();
+        // We must enable the pin 4 times to get a stable reading
+        // The black box prevents the compiler from optimizing this away
+        for _ in 0..4 {
+            self.enable.set_high();
+            core::hint::black_box(&self.enable);
+        }
         let result = self.input.is_high();
         self.enable.set_low();
         result
