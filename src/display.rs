@@ -2,14 +2,12 @@
 
 use defmt::info;
 use embassy_embedded_hal::shared_bus::asynch::spi::SpiDevice;
-use embassy_nrf::{Peri, gpio::{Level, Output, OutputDrive}, peripherals, spim::{self, Spim}, spis};
-use embassy_sync::{blocking_mutex::raw::NoopRawMutex, mutex::Mutex};
+use embassy_nrf::{Peri, gpio::{Level, Output, OutputDrive}, peripherals, spim::Spim};
+use embassy_sync::blocking_mutex::raw::NoopRawMutex;
 use embassy_time::{Delay, Duration, Instant};
 use embedded_graphics::{pixelcolor::Rgb565, prelude::*, primitives::Rectangle};
 use lcd_async::{Builder, Display, interface::SpiInterface, models::ST7789, options::{ColorInversion, Orientation, Rotation}, raw_framebuf::RawFrameBuf};
 use static_cell::StaticCell;
-
-use crate::Irqs;
 
 const WIDTH: usize = 240;
 const HEIGHT: usize = 240;
@@ -18,7 +16,6 @@ const FRAMEBUFFER_HEIGHT: usize = HEIGHT / FRAMEBUFFER_ROWS;
 const BYTES_PER_PIXEL: usize = 2;
 const FRAMEBUFFER_SIZE: usize = WIDTH * FRAMEBUFFER_HEIGHT * BYTES_PER_PIXEL;
 static FRAMEBUFFER: StaticCell<[u8; FRAMEBUFFER_SIZE]> = StaticCell::new();
-static SPI_BUS: StaticCell<Mutex<NoopRawMutex, Spim<'static>>> = StaticCell::new();
 
 /// Display Controller
 pub struct DisplayController {
@@ -30,31 +27,13 @@ pub struct DisplayController {
 
 impl DisplayController {
     pub(crate) async fn new(
-        twispi0: Peri<'static, peripherals::TWISPI0>,
-        irqs: Irqs,
-        sck_pin: Peri<'static, peripherals::P0_02>,
-        mosi_pin: Peri<'static, peripherals::P0_03>,
-        miso_pin: Peri<'static, peripherals::P0_04>,
-        data_command_pin: Peri<'static, peripherals::P0_18>,
-        display_chip_select_pin: Peri<'static, peripherals::P0_25>,
+        display_spi: SpiDevice<'static, NoopRawMutex, Spim<'static>, Output<'static>>,
+        display_dc_pin: Peri<'static, peripherals::P0_18>,
         display_reset_pin: Peri<'static, peripherals::P0_26>,
     ) -> Self {
-        info!("Initializing spi bus");
-        let mut spim_config = spim::Config::default();
-        spim_config.frequency = spim::Frequency::M8;
-        spim_config.mode = spis::MODE_3;
-        let spim = spim::Spim::new(twispi0, irqs, sck_pin, miso_pin, mosi_pin, spim_config);
-        let spi_bus = Mutex::new(spim);
-        let spi_bus = SPI_BUS.init(spi_bus);
-
-        info!("Initializing display spi device");
+        let display_dc = Output::new(display_dc_pin, Level::Low, OutputDrive::Standard);
+        let display_spi_interface = SpiInterface::new(display_spi, display_dc);
         let display_reset = Output::new(display_reset_pin, Level::Low, OutputDrive::Standard);
-        let display_cs = Output::new(display_chip_select_pin, Level::High, OutputDrive::Standard);
-        let display_spi = SpiDevice::new(spi_bus, display_cs);
-
-        info!("Initializing display interface");
-        let data_command = Output::new(data_command_pin, Level::Low, OutputDrive::Standard);
-        let display_spi_interface = SpiInterface::new(display_spi, data_command);
 
         info!("Initializing display");
         let mut display = Builder::new(lcd_async::models::ST7789, display_spi_interface)
