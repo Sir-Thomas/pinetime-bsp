@@ -70,10 +70,10 @@ impl DisplayController {
     pub async fn draw<D: Drawable<Color = Rgb565>>(&mut self, drawable: &D, bounds: Rectangle, background: Rgb565) -> Duration {
         let start_time = Instant::now();
         let start_x = bounds.top_left.x.max(0).min(WIDTH as i32);
-        let end_x = bounds.bottom_right().unwrap().x.max(0).min(WIDTH as i32);
+        let end_x = bounds.bottom_right().unwrap().x.max(0).min((WIDTH - 1) as i32) + 1;
         let width = end_x.saturating_sub(start_x) as usize;
         let start_y = bounds.top_left.y.max(0).min(HEIGHT as i32);
-        let end_y = bounds.bottom_right().unwrap().y.max(0).min(HEIGHT as i32);
+        let end_y = bounds.bottom_right().unwrap().y.max(0).min((HEIGHT - 1) as i32) + 1;
         let height = end_y.saturating_sub(start_y) as usize;
         let fb_height = self.framebuffer.len() / (width * BYTES_PER_PIXEL);
         let rows = (height + fb_height - 1) / fb_height;
