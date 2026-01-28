@@ -67,7 +67,7 @@ impl DisplayController {
     }
 
     /// Draw a drawable object to the display
-    pub async fn draw<D: Drawable<Color = Rgb565>>(&mut self, drawable: D, bounds: Rectangle, background: Rgb565) -> Duration {
+    pub async fn draw<D: Drawable<Color = Rgb565>>(&mut self, drawable: &D, bounds: Rectangle, background: Rgb565) -> Duration {
         let start_time = Instant::now();
         let start_x = bounds.top_left.x.max(0).min(WIDTH as i32);
         let end_x = bounds.bottom_right().unwrap().x.max(0).min(WIDTH as i32);
