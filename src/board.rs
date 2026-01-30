@@ -1,4 +1,5 @@
 use bma425::BMA425;
+use cst816s::CST816S;
 use embassy_embedded_hal::shared_bus::asynch::i2c::I2cDevice;
 use embassy_embedded_hal::shared_bus::asynch::spi::SpiDevice;
 use embassy_nrf::gpio::{Input, Level, Output, OutputDrive, Pull};
@@ -49,6 +50,8 @@ pub struct PineTime {
     pub button: Button,
     /// Display TODO: Improve this later
     pub display: DisplayController,
+    /// Touch Screen
+    pub touchscreen: CST816S<I2cDevice<'static, NoopRawMutex, Twim<'static>>, Input<'static>, Output<'static>>,
     /// Vibrator
     pub vibrator: Vibrator,
 }
@@ -68,6 +71,13 @@ impl PineTime {
             p.P0_03,
             p.P0_04,
         );
+        
+        let mut touchscreen = CST816S::new(
+            I2cDevice::new(&*i2c_bus),
+            Input::new(p.P0_28, Pull::None),
+            Output::new(p.P0_10, Level::High, OutputDrive::Standard)
+        );
+        touchscreen.init(Delay).await.unwrap();
 
         Self {
             accelerometer: BMA425::new(
@@ -95,6 +105,7 @@ impl PineTime {
                 p.P0_18,
                 p.P0_26,
             ).await,
+            touchscreen,
             vibrator: Vibrator::new(p.P0_16),
         }
     }
