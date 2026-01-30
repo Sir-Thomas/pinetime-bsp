@@ -1,5 +1,6 @@
 //! Display module
 
+#[cfg(feature = "defmt")]
 use defmt::info;
 use embassy_embedded_hal::shared_bus::asynch::spi::SpiDevice;
 use embassy_nrf::{Peri, gpio::{Level, Output, OutputDrive}, peripherals, spim::Spim};
@@ -35,6 +36,7 @@ impl DisplayController {
         let display_spi_interface = SpiInterface::new(display_spi, display_dc);
         let display_reset = Output::new(display_reset_pin, Level::Low, OutputDrive::Standard);
 
+        #[cfg(feature = "defmt")]
         info!("Initializing display");
         let mut display = Builder::new(lcd_async::models::ST7789, display_spi_interface)
             .display_size(WIDTH as u16, HEIGHT as u16)
@@ -46,6 +48,7 @@ impl DisplayController {
             .unwrap();
         display.set_orientation(Orientation::default().rotate(Rotation::Deg0)).await.unwrap();
 
+        #[cfg(feature = "defmt")]
         info!("Initializing frame buffer");
         let framebuffer = FRAMEBUFFER.init_with(|| [0; FRAMEBUFFER_SIZE]);
         return Self {
@@ -56,6 +59,7 @@ impl DisplayController {
 
     /// Clear the display with the given color
     pub async fn clear(&mut self, color: Rgb565) {
+        #[cfg(feature = "defmt")]
         info!("Clearing display");
         for i in 0..FRAMEBUFFER_ROWS {
             let mut fbuf = RawFrameBuf::<Rgb565, _>::new(self.framebuffer.as_mut_slice(), WIDTH, FRAMEBUFFER_HEIGHT);

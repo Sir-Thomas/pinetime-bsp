@@ -5,8 +5,8 @@ edition = "2024"
 
 [dependencies]
 bma425 = { path = "../bma425-rs", features = ["defmt"] }
-cst816s = "1.0.1"
-defmt = "1.0.1"
+cst816s = { path = "../cst816s-rs", features = ["defmt"] }
+defmt = { version = "1.0.1", optional = true }
 embassy-embedded-hal = "0.5.0"
 embassy-nrf = { version = "0.9.0", features = [
     "gpiote",
@@ -21,6 +21,9 @@ embedded-graphics = { version = "0.8.1", features = ["defmt"] }
 embedded-hal-async = { version = "1.0.0", features = ["defmt-03"] }
 lcd-async = "0.1.1"
 static_cell = "2.1.1"
+
+[features]
+defmt = [ "dep:defmt", "bma425/defmt", "cst816s/defmt", "embedded-graphics/defmt", "embedded-hal-async/defmt-03" ]
 
 [patch.crates-io]
 lcd-async = { git = "https://github.com/okhsunrog/lcd-async.git", rev = "50efe0a30a4c68a1502049556b2ffb27c13b9539" }
