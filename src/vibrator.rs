@@ -5,24 +5,24 @@ use embassy_time::{Duration, Timer};
 
 /// Vibrator motor controller
 pub struct Vibrator {
-    enable: Output<'static>,
+    output: Output<'static>,
 }
 
 impl Vibrator {
     /// Create a new vibrator instance
     pub fn new(output_pin: Peri<'static, P0_16>) -> Self {
-        let enable = Output::new(
+        let output = Output::new(
             output_pin,
-            Level::Low,
+            Level::High,
             OutputDrive::Standard);
-        Vibrator { enable }
+        Vibrator { output }
     }
 
     /// Pulse the vibrator for a specified duration
     pub async fn pulse(&mut self, duration: Duration) {
-        self.enable.set_high();
+        self.output.set_low();
         Timer::after(duration).await;
-        self.enable.set_low();
+        self.output.set_high();
     }
 
     /// Create a vibration pattern with on/off cycles
