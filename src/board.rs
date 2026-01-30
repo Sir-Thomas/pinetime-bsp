@@ -8,8 +8,8 @@ use embassy_nrf::twim::{self, Twim};
 use embassy_nrf::{Peri, bind_interrupts, saadc, spim, spis};
 use embassy_nrf::config::Config;
 use embassy_sync::mutex::Mutex;
-use embassy_sync::blocking_mutex::raw::{CriticalSectionRawMutex, NoopRawMutex};
-use embassy_time::Duration;
+use embassy_sync::blocking_mutex::raw::NoopRawMutex;
+use embassy_time::{Delay, Duration};
 use static_cell::StaticCell;
 
 use crate::battery::BatteryController;
@@ -20,7 +20,7 @@ use crate::display::DisplayController;
 use crate::vibrator::Vibrator;
 
 static I2C_BUFFER: StaticCell<[u8; 256]> = StaticCell::new();
-static I2C_BUS: StaticCell<Mutex<CriticalSectionRawMutex, Twim<'static>>> = StaticCell::new();
+static I2C_BUS: StaticCell<Mutex<NoopRawMutex, Twim<'static>>> = StaticCell::new();
 static SPI_BUS: StaticCell<Mutex<NoopRawMutex, Spim<'static>>> = StaticCell::new();
 
 bind_interrupts!(
@@ -40,7 +40,7 @@ bind_interrupts!(
 /// Represents all the peripherals and pins available for the PineTime.
 pub struct PineTime {
     /// Accelerometer
-    pub accelerometer: BMA425<I2cDevice<'static, CriticalSectionRawMutex, Twim<'static>>, Input<'static>>,
+    pub accelerometer: BMA425<I2cDevice<'static, NoopRawMutex, Twim<'static>>, Input<'static>>,
     /// Backlight
     pub backlight: BacklightController,
     /// Battery
@@ -103,7 +103,7 @@ impl PineTime {
         twispi1: Peri<'static, peripherals::TWISPI1>,
         p0_06: Peri<'static, peripherals::P0_06>,
         p0_07: Peri<'static, peripherals::P0_07>
-    ) -> &'static Mutex<CriticalSectionRawMutex, Twim<'static>> {
+    ) -> &'static Mutex<NoopRawMutex, Twim<'static>> {
         let mut twim_config = twim::Config::default();
         twim_config.frequency = twim::Frequency::K400;
         let i2c_buffer = I2C_BUFFER.init([0; 256]);
