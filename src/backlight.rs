@@ -26,6 +26,19 @@ impl BacklightController {
         }
     }
 
+    /// Get the current brightness level
+    pub fn brightness(&self) -> BrightnessLevel {
+        if !self.enabled {
+            BrightnessLevel::Off
+        } else {
+            match self.brightness_level {
+                InternalBrightnessLevel::Low => BrightnessLevel::Low,
+                InternalBrightnessLevel::Medium => BrightnessLevel::Medium,
+                InternalBrightnessLevel::High => BrightnessLevel::High,
+            }
+        }
+    }
+
     fn internal_set_brightness(&mut self, level: InternalBrightnessLevel) {
         self.low.set_high();
         self.medium.set_high();
