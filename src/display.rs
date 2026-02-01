@@ -114,4 +114,14 @@ impl DisplayController {
         }
         Instant::now() - start_time
     }
+
+    /// Put the display to sleep
+    pub async fn sleep(&mut self) {
+        self.display.sleep(&mut Delay).await.unwrap();
+    }
+
+    /// Wake the display from sleep
+    pub async fn wake(&mut self) {
+        self.display.wake(&mut Delay).await.unwrap();
+    }
 }
