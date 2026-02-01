@@ -1,6 +1,6 @@
 //! Touch controller module
 
-use cst816s::{CST816S, TouchEvent};
+use cst816s_async::{CST816S, TouchEvent};
 use embassy_embedded_hal::shared_bus::asynch::i2c::I2cDevice;
 use embassy_nrf::{gpio::{Input, Output}, twim::Twim};
 use embassy_sync::blocking_mutex::raw::NoopRawMutex;
