@@ -98,11 +98,22 @@ impl TouchController {
         if self.flipped == ScreenOrientation::Flipped {
             event.location.x = 240 - event.location.x;
             event.location.y = 240 - event.location.y;
+            event.gesture = self.flip_gesture(event.gesture);
         }
         event.into()
     }
 
     pub(crate) fn set_orientation(&mut self, orientation: ScreenOrientation) {
         self.flipped = orientation;
+    }
+
+    fn flip_gesture(&self, gesture: cst816s_async::TouchGesture) -> cst816s_async::TouchGesture {
+        match gesture {
+            cst816s_async::TouchGesture::SwipeUp => cst816s_async::TouchGesture::SwipeDown,
+            cst816s_async::TouchGesture::SwipeDown => cst816s_async::TouchGesture::SwipeUp,
+            cst816s_async::TouchGesture::SwipeLeft => cst816s_async::TouchGesture::SwipeRight,
+            cst816s_async::TouchGesture::SwipeRight => cst816s_async::TouchGesture::SwipeLeft,
+            _ => gesture,
+        }
     }
 }
