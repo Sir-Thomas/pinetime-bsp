@@ -24,6 +24,15 @@ static I2C_BUFFER: StaticCell<[u8; 256]> = StaticCell::new();
 static I2C_BUS: StaticCell<Mutex<NoopRawMutex, Twim<'static>>> = StaticCell::new();
 static SPI_BUS: StaticCell<Mutex<NoopRawMutex, Spim<'static>>> = StaticCell::new();
 
+/// Screen Orientation
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum ScreenOrientation {
+    /// Default Screen Orientation
+    Normal,
+    /// Flipped Screen Orientation
+    Flipped
+}
+
 bind_interrupts!(
     pub(crate) struct Irqs {
         TWISPI0 => spim::InterruptHandler<TWISPI0>;
@@ -54,6 +63,7 @@ pub struct PineTime {
     pub touchscreen: TouchController,
     /// Vibrator
     pub vibrator: Vibrator,
+    screen_orientation: ScreenOrientation,
 }
 
 impl PineTime {
@@ -101,9 +111,11 @@ impl PineTime {
             touchscreen: TouchController::new(
                 I2cDevice::new(&*i2c_bus),
                 Input::new(p.P0_28, Pull::None),
-                Output::new(p.P0_10, Level::High, OutputDrive::Standard)
+                Output::new(p.P0_10, Level::High, OutputDrive::Standard),
+                ScreenOrientation::Normal,
             ).await,
             vibrator: Vibrator::new(p.P0_16),
+            screen_orientation: ScreenOrientation::Normal,
         }
     }
 
@@ -131,5 +143,12 @@ impl PineTime {
         let spim = spim::Spim::new(twispi0, Irqs, sck_pin, miso_pin, mosi_pin, spim_config);
         let spi_bus = Mutex::new(spim);
         SPI_BUS.init(spi_bus)
+    }
+
+    /// Set the screen orientation
+    pub async fn set_screen_orientation(&mut self, orientation: ScreenOrientation) {
+        self.screen_orientation = orientation;
+        self.touchscreen.set_orientation(orientation);
+        self.display.set_orientation(orientation).await;
     }
 }

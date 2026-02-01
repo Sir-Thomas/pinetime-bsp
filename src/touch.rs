@@ -6,9 +6,12 @@ use embassy_nrf::{gpio::{Input, Output}, twim::Twim};
 use embassy_sync::blocking_mutex::raw::NoopRawMutex;
 use embassy_time::Delay;
 
+use crate::ScreenOrientation;
+
 /// Touch Controller
 pub struct TouchController {
-    controller: CST816S<I2cDevice<'static, NoopRawMutex, Twim<'static>>, Input<'static>, Output<'static>>
+    controller: CST816S<I2cDevice<'static, NoopRawMutex, Twim<'static>>, Input<'static>, Output<'static>>,
+    flipped: ScreenOrientation,
 }
 
 impl TouchController {
@@ -17,6 +20,7 @@ impl TouchController {
         i2c_bus: I2cDevice<'static, NoopRawMutex, Twim<'static>>,
         interrupt_pin: Input<'static>,
         reset_pin: Output<'static>,
+        flipped: ScreenOrientation,
     ) -> Self {
         let mut controller = CST816S::new(
             i2c_bus,
@@ -26,11 +30,21 @@ impl TouchController {
         controller.init(Delay).await.unwrap();
         Self {
             controller,
+            flipped,
         }
     }
 
     /// Wait for a touch event
     pub async fn wait_for_touch(&mut self) -> TouchEvent {
-        self.controller.wait_for_touch().await.unwrap()
+        let mut event = self.controller.wait_for_touch().await.unwrap();
+        if self.flipped == ScreenOrientation::Flipped {
+            event.location.x = 240 - event.location.x;
+            event.location.y = 240 - event.location.y;
+        }
+        event
+    }
+
+    pub(crate) fn set_orientation(&mut self, orientation: ScreenOrientation) {
+        self.flipped = orientation;
     }
 }

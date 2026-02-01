@@ -10,6 +10,8 @@ use embedded_graphics::{pixelcolor::Rgb565, prelude::*, primitives::Rectangle};
 use lcd_async::{Builder, Display, interface::SpiInterface, models::ST7789, options::{ColorInversion, Orientation, Rotation}, raw_framebuf::RawFrameBuf};
 use static_cell::StaticCell;
 
+use crate::ScreenOrientation;
+
 const WIDTH: usize = 240;
 const HEIGHT: usize = 240;
 const FRAMEBUFFER_ROWS: usize = 12;
@@ -123,5 +125,16 @@ impl DisplayController {
     /// Wake the display from sleep
     pub async fn wake(&mut self) {
         self.display.wake(&mut Delay).await.unwrap();
+    }
+
+    pub(crate) async fn set_orientation(&mut self, orientation: ScreenOrientation) {
+        match orientation {
+            ScreenOrientation::Normal => {
+                self.display.set_orientation(Orientation::default().rotate(Rotation::Deg0)).await.unwrap();
+            }
+            ScreenOrientation::Flipped => {
+                self.display.set_orientation(Orientation::default().rotate(Rotation::Deg180)).await.unwrap();
+            }
+        }
     }
 }
