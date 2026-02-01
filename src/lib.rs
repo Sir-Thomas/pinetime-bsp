@@ -10,6 +10,7 @@ pub mod battery;
 pub mod button;
 pub mod display;
 // pub mod motion;
+pub mod touch;
 pub mod vibrator;
 
 // Re-exports - TODO: figure out why these are re-exported
