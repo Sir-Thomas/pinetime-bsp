@@ -13,7 +13,6 @@ pub mod display;
 pub mod touch;
 pub mod vibrator;
 
-pub use cst816s_async; // TODO: wrap touch event struct to allow driver swap if needed.
 // pub use embassy_nrf;
 // pub use embassy_sync;
 // pub use embassy_time;
