@@ -45,7 +45,7 @@ pub enum TouchGesture {
     SwipeRight,
     /// Tap
     Tap,
-    /// Double Tap - This doesn't seem to ever be reported by the CST816S
+    /// Double Tap - This doesn't seem to ever be reported. The driver likely needs to be updated to enable double taps.
     DoubleTap,
     /// Long Press
     LongPress,
