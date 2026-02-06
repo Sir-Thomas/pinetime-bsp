@@ -2,19 +2,22 @@ use bma425::BMA425;
 use embassy_embedded_hal::shared_bus::asynch::i2c::I2cDevice;
 use embassy_embedded_hal::shared_bus::asynch::spi::SpiDevice;
 use embassy_nrf::gpio::{Input, Level, Output, OutputDrive, Pull};
+use embassy_nrf::mode::Async;
 use embassy_nrf::peripherals::{self, TWISPI0, TWISPI1};
 use embassy_nrf::spim::Spim;
 use embassy_nrf::twim::{self, Twim};
-use embassy_nrf::{Peri, bind_interrupts, saadc, spim, spis};
+use embassy_nrf::{Peri, bind_interrupts, rng, saadc, spim, spis};
 use embassy_nrf::config::Config;
 use embassy_sync::mutex::Mutex;
 use embassy_sync::blocking_mutex::raw::NoopRawMutex;
 use embassy_time::Duration;
+use nrf_sdc::mpsl::{self, MultiprotocolServiceLayer};
 use static_cell::StaticCell;
 
 use crate::battery::BatteryController;
 use crate::backlight::BacklightController;
 pub use crate::backlight::BrightnessLevel;
+use crate::ble::{BleController, build_mpsl, build_sdc};
 use crate::button::Button;
 use crate::display::DisplayController;
 use crate::touch::TouchController;
@@ -38,12 +41,12 @@ bind_interrupts!(
         TWISPI0 => spim::InterruptHandler<TWISPI0>;
         TWISPI1 => twim::InterruptHandler<TWISPI1>;
         SAADC => saadc::InterruptHandler;
-        // RNG => rng::InterruptHandler<peripherals::RNG>;
-        // EGU0_SWI0 => mpsl::LowPrioInterruptHandler;
-        // CLOCK_POWER => mpsl::ClockInterruptHandler;
-        // RADIO => mpsl::HighPrioInterruptHandler;
-        // TIMER0 => mpsl::HighPrioInterruptHandler;
-        // RTC0 => mpsl::HighPrioInterruptHandler;
+        RNG => rng::InterruptHandler<peripherals::RNG>;
+        EGU0_SWI0 => mpsl::LowPrioInterruptHandler;
+        CLOCK_POWER => mpsl::ClockInterruptHandler;
+        RADIO => mpsl::HighPrioInterruptHandler;
+        TIMER0 => mpsl::HighPrioInterruptHandler;
+        RTC0 => mpsl::HighPrioInterruptHandler;
     }
 );
 
@@ -55,6 +58,8 @@ pub struct PineTime {
     pub backlight: BacklightController,
     /// Battery
     pub battery: BatteryController,
+    /// Bluetooth LE Controller
+    pub bluetooth: BleController,
     /// Button
     pub button: Button,
     /// Display TODO: Improve this later
@@ -81,6 +86,27 @@ impl PineTime {
             p.P0_03,
             p.P0_04,
         );
+        static RNG: StaticCell<rng::Rng<Async>> = StaticCell::new();
+        let rng = RNG.init(rng::Rng::new(p.RNG, Irqs));
+        static MPSL: StaticCell<MultiprotocolServiceLayer> = StaticCell::new();
+        let mpsl = MPSL.init(build_mpsl(
+            Irqs,
+            p.RTC0,
+            p.TIMER0,
+            p.TEMP,
+            p.PPI_CH19,
+            p.PPI_CH30,
+            p.PPI_CH31
+        ).unwrap());
+        let sdc_peripherals = nrf_sdc::Peripherals::new(
+            p.PPI_CH17, p.PPI_CH18, p.PPI_CH20, p.PPI_CH21, p.PPI_CH22, p.PPI_CH23, p.PPI_CH24, p.PPI_CH25, p.PPI_CH26,
+            p.PPI_CH27, p.PPI_CH28, p.PPI_CH29,
+        );
+        let sdc = build_sdc(
+            sdc_peripherals,
+            rng,
+            mpsl,
+        ).unwrap();
 
         Self {
             accelerometer: BMA425::new(
@@ -98,6 +124,7 @@ impl PineTime {
                 p.P0_22,
                 p.P0_23,
             ),
+            bluetooth: BleController::new(&*mpsl, sdc),
             button: Button::new(
                 p.P0_15,
                 p.P0_13,

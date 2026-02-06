@@ -7,6 +7,7 @@ pub use board::*;
 
 pub mod backlight;
 pub mod battery;
+pub mod ble;
 pub mod button;
 pub mod display;
 // pub mod motion;
