@@ -5,8 +5,9 @@ use defmt::info;
 use embassy_embedded_hal::shared_bus::asynch::spi::SpiDevice;
 use embassy_nrf::{Peri, gpio::{Level, Output, OutputDrive}, peripherals, spim::Spim};
 use embassy_sync::blocking_mutex::raw::NoopRawMutex;
-use embassy_time::{Delay, Duration, Instant};
-use embedded_graphics::{pixelcolor::Rgb565, prelude::*};
+use embassy_time::Delay;
+use embedded_graphics::{pixelcolor::Rgb565, prelude::*, primitives::Rectangle};
+use embedded_layout::View;
 use lcd_async::{Builder, Display, interface::SpiInterface, models::ST7789, options::{ColorInversion, Orientation, Rotation}, raw_framebuf::RawFrameBuf};
 use static_cell::StaticCell;
 
@@ -73,9 +74,17 @@ impl DisplayController {
     }
 
     /// Draw a drawable object to the display
-    pub async fn draw<D: Drawable<Color = Rgb565> + Dimensions>(&mut self, drawable: &D, background: Rgb565) -> Duration {
-        let start_time = Instant::now();
-        let bounds = drawable.bounding_box();
+    pub async fn draw<D: Drawable<Color = Rgb565> + Dimensions>(&mut self, drawable: &D, background: Rgb565) {
+        self.draw_impl(drawable, drawable.bounding_box(), background).await
+    }
+
+    /// Draw a view to the display
+    pub async fn draw_view<D: Drawable<Color = Rgb565> + View>(&mut self, drawable: &D, background: Rgb565) {
+        let bounds = drawable.bounds();
+        self.draw_impl(drawable, bounds, background).await
+    }
+
+    async fn draw_impl<D: Drawable<Color = Rgb565>>(&mut self, drawable: &D, bounds: Rectangle, background: Rgb565) {
         let start_x = bounds.top_left.x.max(0).min(WIDTH as i32);
         let end_x = bounds.bottom_right().unwrap().x.max(0).min((WIDTH - 1) as i32) + 1;
         let width = end_x.saturating_sub(start_x) as usize;
@@ -86,7 +95,7 @@ impl DisplayController {
         let rows = (height + fb_height - 1) / fb_height;
 
         if width == 0 || height == 0 {
-            return Instant::now() - start_time;
+            return;
         }
 
         for i in 0..rows {
@@ -115,7 +124,6 @@ impl DisplayController {
                 &self.framebuffer[..size])
                 .await.unwrap();
         }
-        Instant::now() - start_time
     }
 
     /// Put the display to sleep
