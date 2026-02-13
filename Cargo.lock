@@ -838,6 +838,7 @@ dependencies = [
  "embedded-layout",
  "lcd-async",
  "nrf-sdc",
+ "spi-memory-async",
  "static_cell",
 ]
 
@@ -994,6 +995,19 @@ name = "siphasher"
 version = "1.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b2aa850e253778c88a04c3d7323b043aeda9d3e30d5971937c1855769763678e"
+
+[[package]]
+name = "spi-memory-async"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "480a0933bbdbcbdede5aaaf02b5cbfd5edbbfeb94bd9c8387eb08afd433f32c1"
+dependencies = [
+ "bitflags 2.10.0",
+ "defmt 0.3.100",
+ "embedded-hal-async",
+ "embedded-storage",
+ "embedded-storage-async",
+]
 
 [[package]]
 name = "stable_deref_trait"

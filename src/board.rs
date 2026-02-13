@@ -20,6 +20,7 @@ pub use crate::backlight::BrightnessLevel;
 use crate::ble::{BleController, build_mpsl, build_sdc};
 use crate::button::Button;
 use crate::display::DisplayController;
+use crate::flash::FlashController;
 use crate::touch::TouchController;
 use crate::vibrator::Vibrator;
 
@@ -64,6 +65,8 @@ pub struct PineTime {
     pub button: Button,
     /// Display TODO: Improve this later
     pub display: DisplayController,
+    /// SPI Flash
+    pub spi_flash: FlashController,
     /// Touch Screen
     pub touchscreen: TouchController,
     /// Vibrator
@@ -134,6 +137,9 @@ impl PineTime {
                 SpiDevice::new(spi_bus, Output::new(p.P0_25, Level::High, OutputDrive::Standard)),
                 p.P0_18,
                 p.P0_26,
+            ).await,
+            spi_flash: FlashController::new(
+                SpiDevice::new(spi_bus, Output::new(p.P0_05, Level::High, OutputDrive::Standard))
             ).await,
             touchscreen: TouchController::new(
                 I2cDevice::new(&*i2c_bus),

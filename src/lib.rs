@@ -10,6 +10,7 @@ pub mod battery;
 pub mod ble;
 pub mod button;
 pub mod display;
+pub mod flash;
 // pub mod motion;
 pub mod touch;
 pub mod vibrator;
