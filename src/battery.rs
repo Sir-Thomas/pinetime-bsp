@@ -33,13 +33,13 @@ impl BatteryController{
     }
 
     /// Get approximate battery charge level (0-100%)
-    pub async fn get_charge_level(&mut self) -> u32 {
-        let mv = self.get_millivolts().await;
+    pub async fn charge_level(&mut self) -> u8 {
+        let mv = self.millivolts().await;
         approximate_charge(mv)
     }
 
     /// Get battery voltage in millivolts
-    pub async fn get_millivolts(&mut self) -> u32 {
+    pub async fn millivolts(&mut self) -> u32 {
         let mut buf = [0i16; 1];
         self.adc.sample(&mut buf).await;
         buf[0] as u32 * (8 * 600) / 1024
@@ -49,9 +49,15 @@ impl BatteryController{
     pub fn is_charging(&self) -> bool {
         self.charge_pin.is_low()
     }
+
+    /// Wait until the charging state changes and return the new state
+    pub async fn wait_for_charge_state_change(&mut self) -> bool {
+        self.charge_pin.wait_for_any_edge().await;
+        self.is_charging()
+    }
 }
 
-fn approximate_charge(voltage_millis: u32) -> u32 {
+fn approximate_charge(voltage_millis: u32) -> u8 {
     let level_approx = &[(3500, 0), (3616, 3), (3723, 22), (3776, 48), (3979, 79), (4180, 100)];
     let approx = |value| {
         if value < level_approx[0].0 {
@@ -69,5 +75,5 @@ fn approximate_charge(voltage_millis: u32) -> u32 {
             ret
         }
     };
-    approx(voltage_millis)
+    approx(voltage_millis) as u8
 }
