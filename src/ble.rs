@@ -10,7 +10,7 @@ const L2CAP_MTU: usize = 27;
 const L2CAP_TXQ: u8 = 10;
 const L2CAP_RXQ: u8 = 10;
 
-const SDC_MEM_SIZE: usize = 4096;
+const SDC_MEM_SIZE: usize = 2040;
 
 pub(crate) fn build_mpsl(
     irqs: Irqs,
