@@ -6,7 +6,7 @@ use embassy_sync::blocking_mutex::raw::NoopRawMutex;
 use embassy_time::Delay;
 use spi_memory_async::series25::{Flash, FlashParameters, Identification, Status};
 
-struct XT25F32B;
+pub struct XT25F32B;
 
 impl FlashParameters for XT25F32B {
     const PAGE_SIZE: usize = 256;
@@ -17,7 +17,7 @@ impl FlashParameters for XT25F32B {
 
 /// Flash Controller
 pub struct FlashController {
-    flash: Flash<SpiDevice<'static, NoopRawMutex, Spim<'static>, Output<'static>>, XT25F32B, Delay>,
+    pub flash: Flash<SpiDevice<'static, NoopRawMutex, Spim<'static>, Output<'static>>, XT25F32B, Delay>,
 }
 
 impl FlashController {
