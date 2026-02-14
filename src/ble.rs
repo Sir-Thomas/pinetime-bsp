@@ -1,7 +1,7 @@
 //! BLE controller
 
 use embassy_nrf::{Peri, mode::Async, peripherals, rng};
-use nrf_sdc::mpsl::{MultiprotocolServiceLayer, Peripherals, raw};
+use nrf_sdc::mpsl::{MultiprotocolServiceLayer, Peripherals, SessionMem, raw};
 use static_cell::StaticCell;
 
 use crate::Irqs;
@@ -20,6 +20,7 @@ pub(crate) fn build_mpsl(
     ppi_ch19: Peri<'static, peripherals::PPI_CH19>,
     ppi_ch30: Peri<'static, peripherals::PPI_CH30>,
     ppi_ch31: Peri<'static, peripherals::PPI_CH31>,
+    session_memory: &'static mut SessionMem<1>,
 ) -> Result<MultiprotocolServiceLayer<'static>, nrf_sdc::Error> {
     let mpsl_peripherals = Peripherals::new(rtc0, timer0, temp, ppi_ch19, ppi_ch30, ppi_ch31);
     let lfclk_cfg = raw::mpsl_clock_lfclk_cfg_t {
@@ -29,7 +30,7 @@ pub(crate) fn build_mpsl(
         accuracy_ppm: raw::MPSL_DEFAULT_CLOCK_ACCURACY_PPM as u16,
         skip_wait_lfclk_started: raw::MPSL_DEFAULT_SKIP_WAIT_LFCLK_STARTED != 0,
     };
-    MultiprotocolServiceLayer::new(mpsl_peripherals, irqs, lfclk_cfg)
+    MultiprotocolServiceLayer::with_timeslots(mpsl_peripherals, irqs, lfclk_cfg, session_memory)
 }
 
 pub(crate) fn build_sdc(

@@ -27,6 +27,7 @@ use crate::vibrator::Vibrator;
 static I2C_BUFFER: StaticCell<[u8; 256]> = StaticCell::new();
 static I2C_BUS: StaticCell<Mutex<NoopRawMutex, Twim<'static>>> = StaticCell::new();
 static SPI_BUS: StaticCell<Mutex<NoopRawMutex, Spim<'static>>> = StaticCell::new();
+static FLASH: StaticCell<Mutex<NoopRawMutex, mpsl::Flash<'static>>> = StaticCell::new();
 
 /// Screen Orientation
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -65,6 +66,8 @@ pub struct PineTime {
     pub button: Button,
     /// Display TODO: Improve this later
     pub display: DisplayController,
+    /// MPSL Flash
+    pub mpsl_flash: &'static Mutex<NoopRawMutex, mpsl::Flash<'static>>,
     /// SPI Flash
     pub spi_flash: FlashController,
     /// Touch Screen
@@ -92,6 +95,7 @@ impl PineTime {
         static RNG: StaticCell<rng::Rng<Async>> = StaticCell::new();
         let rng = RNG.init(rng::Rng::new(p.RNG, Irqs));
         static MPSL: StaticCell<MultiprotocolServiceLayer> = StaticCell::new();
+        static SESSION_MEMORY: StaticCell<mpsl::SessionMem<1>> = StaticCell::new();
         let mpsl = MPSL.init(build_mpsl(
             Irqs,
             p.RTC0,
@@ -99,8 +103,11 @@ impl PineTime {
             p.TEMP,
             p.PPI_CH19,
             p.PPI_CH30,
-            p.PPI_CH31
+            p.PPI_CH31,
+            SESSION_MEMORY.init(mpsl::SessionMem::new()),
         ).unwrap());
+        let internal_flash = mpsl::Flash::take(mpsl, p.NVMC);
+        let mpsl_flash = FLASH.init(Mutex::new(internal_flash));
         let sdc_peripherals = nrf_sdc::Peripherals::new(
             p.PPI_CH17, p.PPI_CH18, p.PPI_CH20, p.PPI_CH21, p.PPI_CH22, p.PPI_CH23, p.PPI_CH24, p.PPI_CH25, p.PPI_CH26,
             p.PPI_CH27, p.PPI_CH28, p.PPI_CH29,
@@ -138,6 +145,7 @@ impl PineTime {
                 p.P0_18,
                 p.P0_26,
             ).await,
+            mpsl_flash,
             spi_flash: FlashController::new(
                 SpiDevice::new(spi_bus, Output::new(p.P0_05, Level::High, OutputDrive::Standard))
             ).await,
