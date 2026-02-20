@@ -78,6 +78,25 @@ impl DisplayController {
         self.draw_impl(drawable, drawable.bounding_box(), background).await
     }
 
+    pub async fn draw_screen(&mut self, drawable: &impl Drawable<Color = Rgb565>) {
+        let bounds = Rectangle::new(Point::zero(), Size::new(WIDTH as u32, HEIGHT as u32));
+        for i in 0..FRAMEBUFFER_ROWS {
+            let mut fbuf = RawFrameBuf::<Rgb565, _>::new(
+                self.framebuffer.as_mut_slice(),
+                WIDTH,
+                FRAMEBUFFER_HEIGHT,
+            );
+            fbuf.clear(Rgb565::BLACK).unwrap();
+            let mut fbuf = fbuf.translated(Point::new(0, -((FRAMEBUFFER_HEIGHT * i) as i32)));
+            drawable.draw(&mut fbuf).unwrap();
+            self.display.show_raw_data(
+                0, (FRAMEBUFFER_HEIGHT * i) as u16,
+                WIDTH as u16, FRAMEBUFFER_HEIGHT as u16,
+                self.framebuffer
+            ).await.unwrap();
+        }
+    }
+
     /// Draw a view to the display
     pub async fn draw_view<D: Drawable<Color = Rgb565> + View>(&mut self, drawable: &D, background: Rgb565) {
         let bounds = drawable.bounds();
