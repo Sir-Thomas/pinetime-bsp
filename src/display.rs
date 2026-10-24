@@ -78,8 +78,8 @@ impl DisplayController {
         self.draw_impl(drawable, drawable.bounding_box(), background).await
     }
 
+    /// Draw a drawable to the whole screen
     pub async fn draw_screen(&mut self, drawable: &impl Drawable<Color = Rgb565>) {
-        let bounds = Rectangle::new(Point::zero(), Size::new(WIDTH as u32, HEIGHT as u32));
         for i in 0..FRAMEBUFFER_ROWS {
             let mut fbuf = RawFrameBuf::<Rgb565, _>::new(
                 self.framebuffer.as_mut_slice(),
@@ -155,7 +155,18 @@ impl DisplayController {
         self.display.wake(&mut Delay).await.unwrap();
     }
 
-    pub(crate) async fn set_orientation(&mut self, orientation: ScreenOrientation) {
+    /// Get screen orientation
+    pub fn orientation(&self) -> ScreenOrientation {
+        if self.display.orientation() == Orientation::default() {
+            ScreenOrientation::Normal
+        } else {
+            ScreenOrientation::Flipped
+        }
+    }
+
+    /// Set screen orientation
+    pub async fn set_orientation(&mut self, orientation: ScreenOrientation) {
+        info!("Setting display orientation");
         match orientation {
             ScreenOrientation::Normal => {
                 self.display.set_orientation(Orientation::default().rotate(Rotation::Deg0)).await.unwrap();
