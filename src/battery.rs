@@ -1,6 +1,11 @@
 //! Battery charge level and charging status
 // TODO: test this on actual hardware
-use embassy_nrf::{Peri, gpio::{Input, Pull}, peripherals, saadc::{self, Saadc}};
+use embassy_nrf::{
+    Peri,
+    gpio::{Input, Pull},
+    peripherals,
+    saadc::{self, Saadc},
+};
 
 use crate::board::Irqs;
 
@@ -10,21 +15,21 @@ pub struct BatteryController {
     charge_pin: Input<'static>,
 }
 
-impl BatteryController{
+impl BatteryController {
     /// Create a new battery controller
     pub(crate) fn new(
         level_pin: Peri<'static, peripherals::P0_31>,
         saadc: Peri<'static, peripherals::SAADC>,
         irqs: Irqs,
         charge_pin: Peri<'static, peripherals::P0_12>,
-    ) -> BatteryController{
+    ) -> BatteryController {
         let mut bat_config = saadc::ChannelConfig::single_ended(level_pin);
-        bat_config.gain = saadc::Gain::GAIN1_4;
-        bat_config.resistor = saadc::Resistor::BYPASS;
-        bat_config.reference = saadc::Reference::INTERNAL;
+        bat_config.gain = saadc::Gain::Gain1_4;
+        bat_config.resistor = saadc::Resistor::Bypass;
+        bat_config.reference = saadc::Reference::Internal;
         bat_config.time = saadc::Time::_40US;
         let mut adc_config = saadc::Config::default();
-        adc_config.resolution = saadc::Resolution::_10BIT;
+        adc_config.resolution = saadc::Resolution::_10bit;
         let saadc = saadc::Saadc::new(saadc, irqs, adc_config, [bat_config]);
         BatteryController {
             adc: saadc,
@@ -58,7 +63,14 @@ impl BatteryController{
 }
 
 fn approximate_charge(voltage_millis: u32) -> u8 {
-    let level_approx = &[(3500, 0), (3616, 3), (3723, 22), (3776, 48), (3979, 79), (4180, 100)];
+    let level_approx = &[
+        (3500, 0),
+        (3616, 3),
+        (3723, 22),
+        (3776, 48),
+        (3979, 79),
+        (4180, 100),
+    ];
     let approx = |value| {
         if value < level_approx[0].0 {
             level_approx[0].1
